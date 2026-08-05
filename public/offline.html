@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#090A0F" />
+    <title>Luna - Sem conex&atilde;o</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #090a0f;
+        color: #f7f7fb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        align-items: center;
+        background: #090a0f;
+        display: flex;
+        justify-content: center;
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding:
+          max(24px, env(safe-area-inset-top))
+          max(20px, env(safe-area-inset-right))
+          max(24px, env(safe-area-inset-bottom))
+          max(20px, env(safe-area-inset-left));
+      }
+
+      main {
+        background: #12141c;
+        border: 1px solid #292d3d;
+        border-radius: 24px;
+        max-width: 420px;
+        padding: 32px 24px;
+        text-align: center;
+        width: 100%;
+      }
+
+      .moon {
+        align-items: center;
+        background: #191c27;
+        border: 1px solid #6f5bd3;
+        border-radius: 999px;
+        color: #c8bcff;
+        display: inline-flex;
+        font-size: 32px;
+        height: 72px;
+        justify-content: center;
+        margin-bottom: 22px;
+        width: 72px;
+      }
+
+      h1 {
+        font-size: 26px;
+        letter-spacing: -0.4px;
+        margin: 0 0 12px;
+      }
+
+      p {
+        color: #a5a8b8;
+        font-size: 16px;
+        line-height: 1.55;
+        margin: 0 0 24px;
+      }
+
+      button {
+        appearance: none;
+        background: #9b87f5;
+        border: 0;
+        border-radius: 999px;
+        color: #090a0f;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        min-height: 48px;
+        padding: 12px 24px;
+        width: 100%;
+      }
+
+      button:focus-visible {
+        outline: 3px solid #c8bcff;
+        outline-offset: 3px;
+      }
+
+      .hint {
+        color: #6f7383;
+        font-size: 13px;
+        margin: 16px 0 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="moon" aria-hidden="true">&#9790;</div>
+      <h1>Voc&ecirc; est&aacute; sem conex&atilde;o</h1>
+      <p>
+        A Luna n&atilde;o conseguiu acessar seu plano agora. Reconecte-se &agrave; internet e tente novamente.
+      </p>
+      <button type="button" onclick="window.location.reload()">Tentar novamente</button>
+      <p class="hint">A demonstra&ccedil;&atilde;o estar&aacute; dispon&iacute;vel quando a conex&atilde;o voltar.</p>
+    </main>
+  </body>
+</html>

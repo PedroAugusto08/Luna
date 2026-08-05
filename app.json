@@ -2,11 +2,14 @@
   "expo": {
     "name": "Luna",
     "slug": "luna",
+    "description": "Copiloto inteligente para organizar estudos, acompanhar desempenho e cuidar das revis\u00f5es.",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./public/icons/icon-512.png",
     "scheme": "luna",
     "userInterfaceStyle": "dark",
+    "backgroundColor": "#090A0F",
+    "primaryColor": "#9B87F5",
     "ios": { "supportsTablet": true, "icon": "./assets/expo.icon" },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +20,23 @@
       },
       "predictiveBackGestureEnabled": true
     },
-    "web": { "bundler": "metro", "output": "static", "favicon": "./assets/images/favicon.png" },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./public/icons/icon-192.png",
+      "name": "Luna - Copiloto de Estudos",
+      "shortName": "Luna",
+      "lang": "pt-BR",
+      "scope": "/",
+      "themeColor": "#090A0F",
+      "description": "Transforme seu objetivo em um plano di\u00e1rio adaptativo com a Luna.",
+      "display": "standalone",
+      "startUrl": "/",
+      "orientation": "portrait-primary",
+      "backgroundColor": "#090A0F",
+      "barStyle": "black-translucent",
+      "preferRelatedApplications": false
+    },
     "plugins": ["expo-router"],
     "experiments": { "typedRoutes": true, "reactCompiler": true }
   }
