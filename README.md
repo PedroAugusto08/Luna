@@ -4,6 +4,7 @@ Fundação visual e navegável do copiloto mobile de estudos Luna. Esta versão 
 
 ## Requisitos
 
+- NVM
 - Node.js 22.13 ou superior
 - npm 10 ou superior
 - Expo Go compatível com SDK 57 ou um development build
@@ -11,9 +12,12 @@ Fundação visual e navegável do copiloto mobile de estudos Luna. Esta versão 
 ## Execução
 
 ```bash
+nvm use
 npm install
 npm start
 ```
+
+O projeto inclui `.nvmrc`. Na primeira execução, se necessário, instale a versão correta com `nvm install 22`.
 
 No terminal do Expo, escaneie o QR Code com o Expo Go ou use `npm run android`, `npm run ios` (macOS) ou `npm run web`.
 
