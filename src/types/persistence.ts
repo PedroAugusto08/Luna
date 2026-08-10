@@ -1,0 +1,27 @@
+import type { ChatMessage } from './chat';
+import type { DailyGoal, StudyActivity } from './study';
+
+export type PlanView = 'Hoje' | 'Semana' | 'Calendário' | 'Matérias' | 'Edital';
+export type LocalStorageStatus = 'loading' | 'ready' | 'error';
+
+export interface CompletedStudySession {
+  id: string;
+  focusId: string;
+  subject: string;
+  topic: string;
+  completedMinutes: number;
+  completedAt: string;
+}
+
+export interface StudyPreferences {
+  planView: PlanView;
+}
+
+export interface PersistedStudyState {
+  dailyGoal: DailyGoal;
+  activities: StudyActivity[];
+  chatMessages: ChatMessage[];
+  completedSessions: CompletedStudySession[];
+  preferences: StudyPreferences;
+  updatedAt: string;
+}

@@ -4,6 +4,10 @@ const responses = [
   'Seu desempenho está evoluindo. Matemática subiu nesta semana; Direito Constitucional ainda merece atenção nas questões.',
   'As revisões mais importantes hoje são Controle de constitucionalidade e Probabilidade. Comece pela menor retenção estimada.',
 ];
+export function createLocalUserMessage(text: string): ChatMessage {
+  return { id: `user-${Date.now()}`, author: 'user', text, createdAt: new Date().toISOString() };
+}
+
 export async function getMockLunaResponse(message: string): Promise<ChatMessage> {
   await new Promise<void>((resolve) => setTimeout(resolve, 450));
   const normalized = message.toLowerCase();

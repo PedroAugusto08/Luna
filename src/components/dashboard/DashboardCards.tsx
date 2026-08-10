@@ -27,7 +27,7 @@ export function DailyProgressCard({ goal }: { goal: DailyGoal }) {
 }
 
 export function UpcomingCard({ activities }: { activities: StudyActivity[] }) {
-  const visible = activities.slice(0, 3);
+  const visible = activities.filter((activity) => activity.status !== 'completed').slice(0, 3);
   return <Card><SectionHeader title="Próximas atividades" /><View style={styles.list}>{visible.length ? visible.map((activity) => <View key={activity.id} style={styles.activity}><View style={styles.timeBox}><Text style={styles.time}>{activity.scheduledTime ?? 'Flex'}</Text></View><View style={styles.activityCopy}><Text style={styles.activityType}>{activityLabels[activity.type]} · {activity.estimatedMinutes} min</Text><Text style={styles.activitySubject}>{activity.subject}</Text><Text style={styles.smallTopic} numberOfLines={2}>{activity.topic}</Text></View><Ionicons name="chevron-forward" size={18} color={colors.textMuted} /></View>) : <Text style={styles.empty}>Seu dia está livre. Atlas pode sugerir uma atividade.</Text>}</View><TextButton label="Ver plano completo" onPress={() => router.push('/plan')} /></Card>;
 }
 

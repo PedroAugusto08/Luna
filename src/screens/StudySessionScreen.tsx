@@ -3,12 +3,17 @@ import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { AnimatedPressable } from '@/components/common/AnimatedPressable';
 import { Screen } from '@/components/common/Screen';
-import { mockDashboard } from '@/data/mockDashboard';
+import { useStudyData } from '@/state/StudyDataProvider';
 import { colors, radius, spacing, typography } from '@/theme';
 
 export function StudySessionScreen() {
-  const focus = mockDashboard.currentFocus;
-  return <Screen><View style={styles.top}><AnimatedPressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Sair da sessão" style={styles.back}><Ionicons name="close" size={24} color={colors.textPrimary} /></AnimatedPressable><Text style={styles.topLabel}>Sessão de estudos</Text></View><View style={styles.main}><Text style={styles.eyebrow}>FOCO ATUAL</Text><Text style={styles.subject}>{focus.subject}</Text><Text style={styles.topic}>{focus.topic}</Text><View style={styles.timer}><Text style={styles.time}>45:00</Text><Text style={styles.timerLabel}>cronômetro visual · não iniciado</Text></View><View style={styles.plan}><Ionicons name="time-outline" size={20} color={colors.atlas} /><Text style={styles.planText}>{focus.estimatedMinutes} minutos planejados</Text></View></View><View style={styles.actions}><SessionButton label="Pausar" icon="pause" onPress={() => undefined} /><SessionButton label="Concluir" icon="checkmark" primary onPress={() => router.back()} /><SessionButton label="Sair" icon="exit-outline" onPress={() => router.back()} /></View><Text style={styles.note}>Nesta versão, os controles demonstram apenas o fluxo de navegação.</Text></Screen>;
+  const { dashboard, completeCurrentSession } = useStudyData();
+  const focus = dashboard.currentFocus;
+  const handleComplete = () => {
+    completeCurrentSession();
+    router.back();
+  };
+  return <Screen><View style={styles.top}><AnimatedPressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Sair da sessão" style={styles.back}><Ionicons name="close" size={24} color={colors.textPrimary} /></AnimatedPressable><Text style={styles.topLabel}>Sessão de estudos</Text></View><View style={styles.main}><Text style={styles.eyebrow}>FOCO ATUAL</Text><Text style={styles.subject}>{focus.subject}</Text><Text style={styles.topic}>{focus.topic}</Text><View style={styles.timer}><Text style={styles.time}>45:00</Text><Text style={styles.timerLabel}>cronômetro visual · não iniciado</Text></View><View style={styles.plan}><Ionicons name="time-outline" size={20} color={colors.atlas} /><Text style={styles.planText}>{focus.estimatedMinutes} minutos planejados</Text></View></View><View style={styles.actions}><SessionButton label="Pausar" icon="pause" onPress={() => undefined} /><SessionButton label="Concluir" icon="checkmark" primary onPress={handleComplete} /><SessionButton label="Sair" icon="exit-outline" onPress={() => router.back()} /></View><Text style={styles.note}>Ao concluir, esta sessão e o progresso ficarão salvos neste dispositivo.</Text></Screen>;
 }
 
 function SessionButton({ label, icon, primary, onPress }: { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; primary?: boolean; onPress: () => void }) { return <AnimatedPressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.action, primary && styles.primary]}><Ionicons name={icon} size={23} color={primary ? colors.background : colors.textPrimary} /><Text style={[styles.actionLabel, primary && styles.primaryLabel]}>{label}</Text></AnimatedPressable>; }
