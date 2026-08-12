@@ -67,7 +67,9 @@ export function ProfileScreen() {
             {section.items.map(([label, icon]) => (
               <AnimatedPressable
                 key={label}
-                onPress={() => undefined}
+                onPress={() => {
+                  if (label === 'Perfil de estudos') router.push('/onboarding');
+                }}
                 accessibilityRole="button"
                 accessibilityLabel={label}
                 style={styles.item}

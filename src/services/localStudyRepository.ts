@@ -8,6 +8,7 @@ import type {
   StudyPreferences,
 } from '@/types/persistence';
 import type { DailyGoal, StudyActivity, StudyActivityType } from '@/types/study';
+import { isValidStudyTimeRange } from '@/utils/studyTime';
 import type { StudyAvailability, StudyGoalType, StudyProfile, Weekday } from '@/types/user';
 
 const STORAGE_KEY = '@luna/study-state';
@@ -118,23 +119,14 @@ const weekdays: Weekday[] = [
   'sunday',
 ];
 
-function isTime(value: unknown): value is string {
-  if (!isString(value) || !/^\d{2}:\d{2}$/.test(value)) {
-    return false;
-  }
-
-  const [hours, minutes] = value.split(':').map(Number);
-  return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
-}
-
 function isStudyAvailability(value: unknown): value is StudyAvailability {
   return (
     isRecord(value) &&
     isString(value.weekday) &&
     weekdays.includes(value.weekday as Weekday) &&
-    isTime(value.startTime) &&
-    isTime(value.endTime) &&
-    value.startTime < value.endTime
+    isString(value.startTime) &&
+    isString(value.endTime) &&
+    isValidStudyTimeRange(value.startTime, value.endTime)
   );
 }
 
