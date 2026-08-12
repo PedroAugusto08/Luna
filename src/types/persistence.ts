@@ -1,5 +1,6 @@
 import type { ChatMessage } from './chat';
 import type { DailyGoal, StudyActivity } from './study';
+import type { StudyProfile } from './user';
 
 export type PlanView = 'Hoje' | 'Semana' | 'Calendário' | 'Matérias' | 'Edital';
 export type LocalStorageStatus = 'loading' | 'ready' | 'error';
@@ -19,6 +20,7 @@ export interface StudyPreferences {
 
 export interface PersistedStudyState {
   dailyGoal: DailyGoal;
+  studyProfile: StudyProfile | null;
   activities: StudyActivity[];
   chatMessages: ChatMessage[];
   completedSessions: CompletedStudySession[];

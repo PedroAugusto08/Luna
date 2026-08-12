@@ -21,17 +21,20 @@ import type {
   PlanView,
   StudyPreferences,
 } from '@/types/persistence';
+import type { StudyProfile } from '@/types/user';
 
 interface StudyDataContextValue {
   dashboard: StudyDashboardData;
   chatMessages: ChatMessage[];
   completedSessions: CompletedStudySession[];
+  studyProfile: StudyProfile | null;
   preferences: StudyPreferences;
   storageStatus: LocalStorageStatus;
   updatedAt: string;
   appendChatMessage: (message: ChatMessage) => void;
   completeCurrentSession: (completedMinutes?: number) => void;
   setPlanView: (view: PlanView) => void;
+  saveStudyProfile: (profile: StudyProfile) => void;
   resetDemoData: () => Promise<void>;
 }
 
@@ -128,6 +131,19 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
     );
   }, []);
 
+  const saveStudyProfile = useCallback((studyProfile: StudyProfile) => {
+    setState((current) =>
+      withTimestamp({
+        ...current,
+        studyProfile,
+        dailyGoal: {
+          ...current.dailyGoal,
+          targetMinutes: studyProfile.dailyTargetMinutes,
+        },
+      }),
+    );
+  }, []);
+
   const resetDemoData = useCallback(async () => {
     try {
       await localStudyRepository.clear();
@@ -167,12 +183,14 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
       dashboard,
       chatMessages: state.chatMessages,
       completedSessions: state.completedSessions,
+      studyProfile: state.studyProfile,
       preferences: state.preferences,
       storageStatus,
       updatedAt: state.updatedAt,
       appendChatMessage,
       completeCurrentSession,
       setPlanView,
+      saveStudyProfile,
       resetDemoData,
     }),
     [
@@ -181,9 +199,11 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
       dashboard,
       resetDemoData,
       setPlanView,
+      saveStudyProfile,
       state.chatMessages,
       state.completedSessions,
       state.preferences,
+      state.studyProfile,
       state.updatedAt,
       storageStatus,
     ],

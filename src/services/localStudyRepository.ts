@@ -8,9 +8,10 @@ import type {
   StudyPreferences,
 } from '@/types/persistence';
 import type { DailyGoal, StudyActivity, StudyActivityType } from '@/types/study';
+import type { StudyAvailability, StudyGoalType, StudyProfile, Weekday } from '@/types/user';
 
 const STORAGE_KEY = '@luna/study-state';
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 let saveQueue: Promise<void> = Promise.resolve();
 
 interface StorageEnvelope {
@@ -100,7 +101,70 @@ function isPreferences(value: unknown): value is StudyPreferences {
   );
 }
 
-function isPersistedStudyState(value: unknown): value is PersistedStudyState {
+const studyGoalTypes: StudyGoalType[] = [
+  'public-exam',
+  'entrance-exam',
+  'oab',
+  'certification',
+];
+
+const weekdays: Weekday[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+];
+
+function isTime(value: unknown): value is string {
+  if (!isString(value) || !/^\d{2}:\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [hours, minutes] = value.split(':').map(Number);
+  return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
+}
+
+function isStudyAvailability(value: unknown): value is StudyAvailability {
+  return (
+    isRecord(value) &&
+    isString(value.weekday) &&
+    weekdays.includes(value.weekday as Weekday) &&
+    isTime(value.startTime) &&
+    isTime(value.endTime) &&
+    value.startTime < value.endTime
+  );
+}
+
+function isStudyAvailabilityList(value: unknown): value is StudyAvailability[] {
+  if (!Array.isArray(value) || value.length === 0 || !value.every(isStudyAvailability)) {
+    return false;
+  }
+
+  return new Set(value.map((item) => item.weekday)).size === value.length;
+}
+
+function isStudyProfile(value: unknown): value is StudyProfile {
+  return (
+    isRecord(value) &&
+    isString(value.fullName) &&
+    value.fullName.trim().length > 0 &&
+    isString(value.goalType) &&
+    studyGoalTypes.includes(value.goalType as StudyGoalType) &&
+    isString(value.goalName) &&
+    value.goalName.trim().length > 0 &&
+    isFiniteNumber(value.dailyTargetMinutes) &&
+    value.dailyTargetMinutes > 0 &&
+    isStudyAvailabilityList(value.availability) &&
+    isString(value.completedAt)
+  );
+}
+
+type LegacyPersistedStudyState = Omit<PersistedStudyState, 'studyProfile'>;
+
+function isLegacyPersistedStudyState(value: unknown): value is LegacyPersistedStudyState {
   return (
     isRecord(value) &&
     isDailyGoal(value.dailyGoal) &&
@@ -115,6 +179,18 @@ function isPersistedStudyState(value: unknown): value is PersistedStudyState {
   );
 }
 
+function isPersistedStudyState(value: unknown): value is PersistedStudyState {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const studyProfile = value.studyProfile;
+  return (
+    isLegacyPersistedStudyState(value) &&
+    (studyProfile === null || isStudyProfile(studyProfile))
+  );
+}
+
 function parseEnvelope(rawValue: string): PersistedStudyState | null {
   let parsed: unknown;
 
@@ -124,15 +200,22 @@ function parseEnvelope(rawValue: string): PersistedStudyState | null {
     return null;
   }
 
-  if (
-    !isRecord(parsed) ||
-    parsed.version !== SCHEMA_VERSION ||
-    !isPersistedStudyState(parsed.state)
-  ) {
+  if (!isRecord(parsed)) {
     return null;
   }
 
-  return parsed.state;
+  if (parsed.version === SCHEMA_VERSION && isPersistedStudyState(parsed.state)) {
+    return parsed.state;
+  }
+
+  if (parsed.version === 1 && isLegacyPersistedStudyState(parsed.state)) {
+    return {
+      ...parsed.state,
+      studyProfile: null,
+    };
+  }
+
+  return null;
 }
 
 export const localStudyRepository = {

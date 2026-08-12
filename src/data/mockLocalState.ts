@@ -25,6 +25,7 @@ export const initialChatMessages: ChatMessage[] = [
 
 export function createMockLocalState(): PersistedStudyState {
   return {
+    studyProfile: null,
     dailyGoal: { ...mockDashboard.dailyGoal },
     activities: mockDashboard.upcomingActivities.map((activity) => ({ ...activity })),
     chatMessages: initialChatMessages.map((message) => ({ ...message })),
