@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -30,6 +30,8 @@ const defaultWeekdays: Weekday[] = [
 
 export function OnboardingScreen() {
   const { studyProfile, saveStudyProfile } = useStudyData();
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isEditing = mode === 'edit';
   const [step, setStep] = useState<OnboardingStep>('welcome');
   const [fullName, setFullName] = useState(studyProfile?.fullName ?? '');
   const [goalType, setGoalType] = useState<StudyGoalType | null>(
@@ -66,7 +68,9 @@ export function OnboardingScreen() {
       return;
     }
 
-    router.back();
+    if (isEditing) {
+      router.back();
+    }
   };
 
   const handleComplete = () => {
@@ -87,7 +91,7 @@ export function OnboardingScreen() {
       })),
       completedAt: studyProfile?.completedAt ?? new Date().toISOString(),
     });
-    router.replace('/profile');
+    router.replace(isEditing ? '/profile' : '/');
   };
 
   const toggleWeekday = (weekday: Weekday) => {
@@ -101,7 +105,7 @@ export function OnboardingScreen() {
 
   return (
     <Screen scrollProps={{ keyboardShouldPersistTaps: 'handled' }}>
-      <OnboardingHeader step={step} onBack={handleBack} />
+      <OnboardingHeader step={step} canExit={isEditing} onBack={handleBack} />
 
       {step === 'welcome' ? (
         <WelcomeStep onContinue={() => setStep('profile')} />
@@ -146,23 +150,30 @@ export function OnboardingScreen() {
 
 function OnboardingHeader({
   step,
+  canExit,
   onBack,
 }: {
   step: OnboardingStep;
+  canExit: boolean;
   onBack: () => void;
 }) {
   const activeIndex = step === 'welcome' ? 0 : step === 'profile' ? 1 : 2;
+  const showBackButton = step !== 'welcome' || canExit;
 
   return (
     <View style={styles.header}>
-      <AnimatedPressable
-        onPress={onBack}
-        accessibilityRole="button"
-        accessibilityLabel="Voltar"
-        style={styles.backButton}
-      >
-        <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-      </AnimatedPressable>
+      {showBackButton ? (
+        <AnimatedPressable
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar"
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
+        </AnimatedPressable>
+      ) : (
+        <View style={styles.backPlaceholder} />
+      )}
       <View
         style={styles.progress}
         accessibilityRole="progressbar"
@@ -456,6 +467,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   backButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   progress: { flex: 1, flexDirection: 'row', gap: spacing.xs },
+  backPlaceholder: { width: 44, height: 44 },
   progressSegment: { flex: 1, height: 4, borderRadius: radius.pill, backgroundColor: colors.border },
   progressSegmentActive: { backgroundColor: colors.luna },
   step: { gap: spacing.lg, paddingTop: spacing.md },
