@@ -8,6 +8,7 @@ import { Screen } from '@/components/common/Screen';
 import { LocalDataCard } from '@/components/profile/LocalDataCard';
 import { useStudyData } from '@/state/StudyDataProvider';
 import { colors, radius, spacing, typography } from '@/theme';
+import { getInitials } from '@/utils/userProfile';
 
 const sections = [
   { title: 'Estudos', items: [['Perfil de estudos', 'school-outline'], ['Objetivos e provas', 'flag-outline'], ['Disponibilidade', 'time-outline'], ['Matérias', 'library-outline'], ['Notificações', 'notifications-outline'], ['Preferências da Luna', 'moon-outline']] },
@@ -36,7 +37,7 @@ export function ProfileScreen() {
 
       <View style={styles.profile}>
         <View style={styles.avatar}>
-          <Text style={styles.initials}>PA</Text>
+          <Text style={styles.initials}>{getInitials(user.fullName)}</Text>
         </View>
         <Text style={styles.name}>{user.fullName}</Text>
         <Text style={styles.goal}>{user.primaryGoal}</Text>
@@ -53,8 +54,8 @@ export function ProfileScreen() {
         </Card>
         <Card style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>Objetivos ativos</Text>
-          <Text style={styles.summaryValue}>1 prova</Text>
-          <Text style={styles.summaryNote}>OAB · 1ª fase</Text>
+          <Text style={styles.summaryValue}>1 objetivo</Text>
+          <Text style={styles.summaryNote}>{user.primaryGoal}</Text>
         </Card>
       </View>
 

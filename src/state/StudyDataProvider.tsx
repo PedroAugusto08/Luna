@@ -22,6 +22,7 @@ import type {
   StudyPreferences,
 } from '@/types/persistence';
 import type { StudyProfile } from '@/types/user';
+import { getFirstName } from '@/utils/userProfile';
 
 interface StudyDataContextValue {
   dashboard: StudyDashboardData;
@@ -164,9 +165,19 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
     const currentDayIndex = Math.max(0, dailyMinutes.length - 1);
     dailyMinutes[currentDayIndex] = (dailyMinutes[currentDayIndex] ?? 0) + addedMinutes;
 
+    const user = state.studyProfile
+      ? {
+          ...mockDashboard.user,
+          firstName: getFirstName(state.studyProfile.fullName),
+          fullName: state.studyProfile.fullName,
+          primaryGoal: state.studyProfile.goalName,
+        }
+      : mockDashboard.user;
+
     return {
       ...mockDashboard,
       dailyGoal: state.dailyGoal,
+      user,
       upcomingActivities: state.activities,
       weeklySummary: {
         ...mockDashboard.weeklySummary,
@@ -176,7 +187,7 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
         dailyMinutes,
       },
     };
-  }, [state.activities, state.completedSessions, state.dailyGoal]);
+  }, [state.activities, state.completedSessions, state.dailyGoal, state.studyProfile]);
 
   const value = useMemo<StudyDataContextValue>(
     () => ({
