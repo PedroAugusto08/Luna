@@ -30,8 +30,9 @@ const defaultWeekdays: Weekday[] = [
 
 export function OnboardingScreen() {
   const { studyProfile, saveStudyProfile } = useStudyData();
-  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const { mode, returnTo } = useLocalSearchParams<{ mode?: string; returnTo?: string }>();
   const isEditing = mode === 'edit';
+  const editingDestination = returnTo === 'plan' ? '/plan' : '/profile';
   const [step, setStep] = useState<OnboardingStep>('welcome');
   const [fullName, setFullName] = useState(studyProfile?.fullName ?? '');
   const [goalType, setGoalType] = useState<StudyGoalType | null>(
@@ -91,7 +92,7 @@ export function OnboardingScreen() {
       })),
       completedAt: studyProfile?.completedAt ?? new Date().toISOString(),
     });
-    router.replace(isEditing ? '/profile' : '/');
+    router.replace(isEditing ? editingDestination : '/');
   };
 
   const toggleWeekday = (weekday: Weekday) => {

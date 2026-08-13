@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { AnimatedPressable } from '@/components/common/AnimatedPressable';
 import { Card } from '@/components/common/Card';
@@ -11,12 +12,16 @@ import { planSubjects, weeklyLoad } from '@/data/mockPlan';
 import { useStudyData } from '@/state/StudyDataProvider';
 import { colors, radius, spacing, typography } from '@/theme';
 import type { PlanView } from '@/types/persistence';
+import { getShortWeekdayLabel, sortStudyAvailability } from '@/utils/availability';
 
 const filters = ['Hoje', 'Semana', 'Calendário', 'Matérias', 'Edital'] as const satisfies readonly PlanView[];
 
 export function PlanScreen() {
-  const { dashboard, preferences, setPlanView } = useStudyData();
+  const { dashboard, preferences, setPlanView, studyProfile } = useStudyData();
   const filter = preferences.planView;
+  const availability = sortStudyAvailability(studyProfile?.availability ?? []);
+  const availabilityTitle =
+    availability.length === 1 ? '1 dia configurado' : `${availability.length} dias configurados`;
 
   return (
     <Screen floating={<LunaAskBar />}>
@@ -81,6 +86,30 @@ export function PlanScreen() {
         </View>
       </Card>
       <Card>
+        <SectionHeader eyebrow="Disponibilidade" title={availabilityTitle} />
+        {availability.length > 0 ? (
+          <View style={availabilityStyles.list}>
+            {availability.map((item) => (
+              <View key={item.weekday} style={availabilityStyles.item}>
+                <View style={availabilityStyles.day}>
+                  <Ionicons name="calendar-outline" size={17} color={colors.atlas} />
+                  <Text style={availabilityStyles.dayText}>
+                    {getShortWeekdayLabel(item.weekday)}
+                  </Text>
+                </View>
+                <Text style={availabilityStyles.time}>
+                  {item.startTime}–{item.endTime}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.muted}>
+            Informe seus dias e horários para preparar a base do plano adaptativo.
+          </Text>
+        )}
+      </Card>
+      <Card>
         <SectionHeader eyebrow="Matérias" title="Progresso do ciclo" />
         <View style={styles.subjects}>
           {planSubjects.map((subject) => (
@@ -101,16 +130,30 @@ export function PlanScreen() {
         </Text>
         <View style={styles.editalMeta}>
           <Ionicons name="document-text-outline" size={20} color={colors.lunaLight} />
-          <Text style={styles.editalText}>Objetivo ativo: OAB — 1ª fase</Text>
+          <Text style={styles.editalText}>Objetivo ativo: {dashboard.user.primaryGoal}</Text>
         </View>
       </Card>
       <PrimaryButton
         label="Ajustar disponibilidade"
         icon="options-outline"
-        onPress={() => undefined}
+        onPress={() =>
+          router.push(
+            studyProfile
+              ? { pathname: '/onboarding', params: { mode: 'edit', returnTo: 'plan' } }
+              : '/onboarding',
+          )
+        }
       />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({ eyebrow: { ...typography.label, color: colors.luna }, title: { ...typography.screenTitle, color: colors.textPrimary }, intro: { ...typography.body, color: colors.textSecondary }, filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginVertical: spacing.xs }, filter: { minHeight: 42, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, filterActive: { backgroundColor: colors.lunaTint, borderColor: colors.luna }, filterText: { ...typography.caption, color: colors.textSecondary }, filterTextActive: { color: colors.lunaLight, fontWeight: '700' }, filterFeedback: { ...typography.caption, color: colors.textMuted }, timeline: { marginTop: spacing.md }, timelineItem: { minHeight: 68, flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }, time: { ...typography.caption, color: colors.textSecondary, width: 45 }, dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.atlas, marginTop: 5 }, timelineCopy: { flex: 1, paddingBottom: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, subject: { ...typography.bodyStrong, color: colors.textPrimary }, muted: { ...typography.caption, color: colors.textSecondary }, week: { height: 145, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs, marginTop: spacing.lg }, day: { flex: 1, height: '100%', alignItems: 'center', gap: spacing.xxs }, dayBar: { flex: 1, width: 15, justifyContent: 'flex-end', borderRadius: radius.pill, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }, dayFill: { width: '100%', backgroundColor: colors.atlas, borderRadius: radius.pill }, dayLabel: { ...typography.caption, color: colors.textSecondary }, dayMinutes: { fontSize: 10, color: colors.textMuted }, subjects: { marginTop: spacing.md, gap: spacing.lg }, subjectRow: { gap: spacing.xs }, subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }, editalMeta: { marginTop: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceElevated }, editalText: { ...typography.bodyStrong, color: colors.textPrimary, flex: 1 } });
+
+const availabilityStyles = StyleSheet.create({
+  list: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
+  item: { minWidth: 128, flexGrow: 1, padding: spacing.sm, borderRadius: radius.md, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border },
+  day: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  dayText: { ...typography.bodyStrong, color: colors.textPrimary },
+  time: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xxs },
+});
