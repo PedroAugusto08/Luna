@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { ChatMessage } from '@/types/chat';
 import type {
+  CompletedReview,
   CompletedStudySession,
   PersistedStudyState,
   PlanView,
@@ -12,7 +13,7 @@ import { isValidStudyTimeRange } from '@/utils/studyTime';
 import type { StudyAvailability, StudyGoalType, StudyProfile, Weekday } from '@/types/user';
 
 const STORAGE_KEY = '@luna/study-state';
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 let saveQueue: Promise<void> = Promise.resolve();
 
 interface StorageEnvelope {
@@ -92,6 +93,17 @@ function isCompletedSession(value: unknown): value is CompletedStudySession {
   );
 }
 
+function isCompletedReview(value: unknown): value is CompletedReview {
+  return (
+    isRecord(value) &&
+    isString(value.id) &&
+    isString(value.reviewId) &&
+    isString(value.subject) &&
+    isString(value.topic) &&
+    isString(value.completedAt)
+  );
+}
+
 const planViews: PlanView[] = ['Hoje', 'Semana', 'Calendário', 'Matérias', 'Edital'];
 
 function isPreferences(value: unknown): value is StudyPreferences {
@@ -154,9 +166,10 @@ function isStudyProfile(value: unknown): value is StudyProfile {
   );
 }
 
-type LegacyPersistedStudyState = Omit<PersistedStudyState, 'studyProfile'>;
+type PersistedStudyStateV2 = Omit<PersistedStudyState, 'completedReviews'>;
+type PersistedStudyStateV1 = Omit<PersistedStudyStateV2, 'studyProfile'>;
 
-function isLegacyPersistedStudyState(value: unknown): value is LegacyPersistedStudyState {
+function isPersistedStudyStateV1(value: unknown): value is PersistedStudyStateV1 {
   return (
     isRecord(value) &&
     isDailyGoal(value.dailyGoal) &&
@@ -171,15 +184,28 @@ function isLegacyPersistedStudyState(value: unknown): value is LegacyPersistedSt
   );
 }
 
-function isPersistedStudyState(value: unknown): value is PersistedStudyState {
+function isPersistedStudyStateV2(value: unknown): value is PersistedStudyStateV2 {
   if (!isRecord(value)) {
     return false;
   }
 
   const studyProfile = value.studyProfile;
   return (
-    isLegacyPersistedStudyState(value) &&
+    isPersistedStudyStateV1(value) &&
     (studyProfile === null || isStudyProfile(studyProfile))
+  );
+}
+
+function isPersistedStudyState(value: unknown): value is PersistedStudyState {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const completedReviews = value.completedReviews;
+  return (
+    isPersistedStudyStateV2(value) &&
+    Array.isArray(completedReviews) &&
+    completedReviews.every(isCompletedReview)
   );
 }
 
@@ -200,10 +226,18 @@ function parseEnvelope(rawValue: string): PersistedStudyState | null {
     return parsed.state;
   }
 
-  if (parsed.version === 1 && isLegacyPersistedStudyState(parsed.state)) {
+  if (parsed.version === 2 && isPersistedStudyStateV2(parsed.state)) {
+    return {
+      ...parsed.state,
+      completedReviews: [],
+    };
+  }
+
+  if (parsed.version === 1 && isPersistedStudyStateV1(parsed.state)) {
     return {
       ...parsed.state,
       studyProfile: null,
+      completedReviews: [],
     };
   }
 

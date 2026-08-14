@@ -9,7 +9,6 @@ import { ProgressBar } from '@/components/common/ProgressBar';
 import { Screen } from '@/components/common/Screen';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { agentColors, mockAgents } from '@/data/mockAgents';
-import { mockDashboard } from '@/data/mockDashboard';
 import { planHistory, planSubjects } from '@/data/mockPlan';
 import { getMostUrgentReviews } from '@/services/reviewPriorityService';
 import { useStudyData } from '@/state/StudyDataProvider';
@@ -23,17 +22,20 @@ import { getProgress } from '@/utils/progress';
 
 type SpecialistId = Exclude<AgentId, 'luna'>;
 
-const agentConversationDrafts: Record<Exclude<SpecialistId, 'marley'>, string> = {
+const agentConversationDrafts: Record<SpecialistId, string> = {
   atlas: 'Quero revisar meu planejamento com o Atlas.',
   peter: 'Quero entender minha análise de desempenho com o Peter.',
+  marley: 'Não tenho revisões pendentes. O que devo estudar agora?',
 };
 
 export function AgentDetailScreen({ agentId }: { agentId: SpecialistId }) {
+  const { dashboard } = useStudyData();
   const profile = mockAgents.find((item) => item.id === agentId);
   if (!profile) return null;
   const color = agentColors[agentId];
-  return <Screen><View style={styles.top}><AnimatedPressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.back}><Ionicons name="arrow-back" size={22} color={colors.textPrimary} /></AnimatedPressable><Text style={styles.topLabel}>Agente especialista</Text></View><View style={[styles.hero, { borderColor: color }]}><AgentAvatar agent={agentId} size={72} /><View style={styles.heroCopy}><Text style={styles.title}>{profile.name}</Text><Text style={[styles.role, { color }]}>{profile.role}</Text><Text style={styles.description}>{profile.description}</Text></View></View>{agentId === 'atlas' ? <AtlasContent /> : agentId === 'peter' ? <PeterContent /> : <MarleyContent />}<PrimaryButton label={agentId === 'marley' ? 'Iniciar revisão' : `Conversar com ${profile.name}`} icon={agentId === 'marley' ? 'play' : 'chatbubble-outline'} tone={color} onPress={() => {
-    if (agentId === 'marley') {
+  const hasPendingReviews = dashboard.pendingReviews.length > 0;
+  return <Screen><View style={styles.top}><AnimatedPressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.back}><Ionicons name="arrow-back" size={22} color={colors.textPrimary} /></AnimatedPressable><Text style={styles.topLabel}>Agente especialista</Text></View><View style={[styles.hero, { borderColor: color }]}><AgentAvatar agent={agentId} size={72} /><View style={styles.heroCopy}><Text style={styles.title}>{profile.name}</Text><Text style={[styles.role, { color }]}>{profile.role}</Text><Text style={styles.description}>{profile.description}</Text></View></View>{agentId === 'atlas' ? <AtlasContent /> : agentId === 'peter' ? <PeterContent /> : <MarleyContent />}<PrimaryButton label={agentId === 'marley' && hasPendingReviews ? 'Iniciar revisão' : `Conversar com ${profile.name}`} icon={agentId === 'marley' && hasPendingReviews ? 'play' : 'chatbubble-outline'} tone={color} onPress={() => {
+    if (agentId === 'marley' && hasPendingReviews) {
       router.push({ pathname: '/study-session', params: { mode: 'review' } });
       return;
     }
@@ -104,8 +106,11 @@ function PeterContent() {
 }
 
 function MarleyContent() {
-  const reviews = getMostUrgentReviews(mockDashboard.pendingReviews, 3);
-  return <><View style={styles.metricsGrid}><MetricCard label="Revisões hoje" value={`${reviews.length}`} detail="55 min estimados" /><MetricCard label="Retenção estimada" value="61%" detail="Indicador orientativo" /></View><Card style={styles.warningCard}><SectionHeader eyebrow="Conteúdos em risco" title="Revisões prioritárias" /><View style={styles.progressList}>{reviews.map((review) => <View key={review.id} style={styles.progressItem}><View style={styles.rowBetween}><View style={styles.flex}><Text style={styles.itemTitle}>{review.subject}</Text><Text style={styles.muted}>{review.topic}{review.daysOverdue ? ` · ${review.daysOverdue}d atrasada` : ''}</Text></View><Text style={styles.retention}>{review.retentionScore}%</Text></View><ProgressBar progress={review.retentionScore / 100} color={review.urgency === 'high' ? colors.urgent : colors.marley} /></View>)}</View></Card><Card><SectionHeader title="Próximas revisões" /><Rows items={['Amanhã · Ética profissional', 'Qui, 06 ago · Interpretação de texto', 'Sáb, 08 ago · Funções e gráficos']} /></Card><Card><SectionHeader title="Como Marley priorizou" /><Text style={styles.description}>Urgência, menor retenção estimada e dias de atraso definem a ordem. Os percentuais são indicadores orientativos, não medições científicas.</Text></Card></>;
+  const { dashboard, completedReviews } = useStudyData();
+  const reviews = getMostUrgentReviews(dashboard.pendingReviews, 3);
+  const estimatedMinutes = reviews.length * 20;
+
+  return <><View style={styles.metricsGrid}><MetricCard label="Revisões hoje" value={`${reviews.length}`} detail={`${estimatedMinutes} min estimados`} /><MetricCard label="Revisões concluídas" value={`${completedReviews.length}`} detail="Salvas neste dispositivo" /></View><Card style={reviews.length > 0 ? styles.warningCard : undefined}><SectionHeader eyebrow={reviews.length > 0 ? 'Conteúdos em risco' : 'Marley está tranquilo'} title={reviews.length > 0 ? 'Revisões prioritárias' : 'Nenhuma revisão urgente para hoje'} />{reviews.length > 0 ? <View style={styles.progressList}>{reviews.map((review) => <View key={review.id} style={styles.progressItem}><View style={styles.rowBetween}><View style={styles.flex}><Text style={styles.itemTitle}>{review.subject}</Text><Text style={styles.muted}>{review.topic}{review.daysOverdue ? ` · ${review.daysOverdue}d atrasada` : ''}</Text></View><Text style={styles.retention}>{review.retentionScore}%</Text></View><ProgressBar progress={review.retentionScore / 100} color={review.urgency === 'high' ? colors.urgent : colors.marley} /></View>)}</View> : <Text style={styles.description}>As revisões concluídas voltarão a aparecer quando o próximo ciclo estiver disponível.</Text>}</Card><Card><SectionHeader title="Próximas revisões" /><Rows items={['Amanhã · Ética profissional', 'Qui, 06 ago · Interpretação de texto', 'Sáb, 08 ago · Funções e gráficos']} /></Card><Card><SectionHeader title="Como Marley priorizou" /><Text style={styles.description}>Urgência, menor retenção estimada e dias de atraso definem a ordem. Os percentuais são indicadores orientativos, não medições científicas.</Text></Card></>;
 }
 
 function Rows({ items }: { items: string[] }) { return <View style={styles.rows}>{items.map((item) => <View key={item} style={styles.listRow}><View style={styles.bullet} /><Text style={styles.itemTitle}>{item}</Text></View>)}</View>; }

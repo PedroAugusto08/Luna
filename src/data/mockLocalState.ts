@@ -30,6 +30,7 @@ export function createMockLocalState(): PersistedStudyState {
     activities: mockDashboard.upcomingActivities.map((activity) => ({ ...activity })),
     chatMessages: initialChatMessages.map((message) => ({ ...message })),
     completedSessions: [],
+    completedReviews: [],
     preferences: { planView: 'Hoje' },
     updatedAt: new Date().toISOString(),
   };

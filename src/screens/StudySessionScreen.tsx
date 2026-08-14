@@ -9,25 +9,29 @@ import { useStudyData } from '@/state/StudyDataProvider';
 import { colors, radius, spacing, typography } from '@/theme';
 
 export function StudySessionScreen() {
-  const { dashboard, completeCurrentSession } = useStudyData();
+  const { dashboard, completeCurrentSession, completeReview } = useStudyData();
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const focus = dashboard.currentFocus;
-  const review = mode === 'review'
+  const isReviewMode = mode === 'review';
+  const review = isReviewMode
     ? getMostUrgentReviews(dashboard.pendingReviews, 1)[0]
     : undefined;
-  const sessionSubject = review?.subject ?? focus.subject;
-  const sessionTopic = review?.topic ?? focus.topic;
-  const sessionMinutes = review ? 20 : focus.estimatedMinutes;
-  const sessionColor = review ? colors.marley : colors.atlas;
+  const sessionSubject = review?.subject ?? (isReviewMode ? 'Nenhuma revisão pendente' : focus.subject);
+  const sessionTopic = review?.topic ?? (isReviewMode ? 'Marley está tranquilo por enquanto.' : focus.topic);
+  const sessionMinutes = review ? 20 : isReviewMode ? 0 : focus.estimatedMinutes;
+  const sessionColor = isReviewMode ? colors.marley : colors.atlas;
   const [isPaused, setIsPaused] = useState(false);
   const plannedTime = `${String(sessionMinutes).padStart(2, '0')}:00`;
   const handleComplete = () => {
-    if (!review) {
+    if (review) {
+      completeReview(review);
+    } else if (!isReviewMode) {
       completeCurrentSession();
     }
+
     router.back();
   };
-  return <Screen><View style={styles.top}><AnimatedPressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Sair da sessão" style={styles.back}><Ionicons name="close" size={24} color={colors.textPrimary} /></AnimatedPressable><Text style={styles.topLabel}>{review ? 'Sessão de revisão' : 'Sessão de estudos'}</Text></View><View style={styles.main}><Text style={[styles.eyebrow, { color: sessionColor }]}>{review ? 'REVISÃO PRIORITÁRIA' : 'FOCO ATUAL'}</Text><Text style={styles.subject}>{sessionSubject}</Text><Text style={styles.topic}>{sessionTopic}</Text><View style={[styles.timer, { borderColor: sessionColor }, isPaused && styles.timerPaused]}><Text style={styles.time}>{plannedTime}</Text><Text accessibilityLiveRegion="polite" style={styles.timerLabel}>{isPaused ? 'sessão pausada · cronômetro mockado' : 'sessão pronta · cronômetro mockado'}</Text></View><View style={styles.plan}><Ionicons name="time-outline" size={20} color={sessionColor} /><Text style={styles.planText}>{sessionMinutes} minutos planejados</Text></View></View><View style={styles.actions}><SessionButton label={isPaused ? 'Retomar' : 'Pausar'} icon={isPaused ? 'play' : 'pause'} onPress={() => setIsPaused((current) => !current)} /><SessionButton label={review ? 'Encerrar' : 'Concluir'} icon="checkmark" primary tone={sessionColor} onPress={handleComplete} /><SessionButton label="Sair" icon="exit-outline" onPress={() => router.back()} /></View><Text style={styles.note}>{review ? 'Esta demonstração ainda não altera o histórico de revisões.' : 'Ao concluir, esta sessão e o progresso ficarão salvos neste dispositivo.'}</Text></Screen>;
+  return <Screen><View style={styles.top}><AnimatedPressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Sair da sessão" style={styles.back}><Ionicons name="close" size={24} color={colors.textPrimary} /></AnimatedPressable><Text style={styles.topLabel}>{isReviewMode ? 'Sessão de revisão' : 'Sessão de estudos'}</Text></View><View style={styles.main}><Text style={[styles.eyebrow, { color: sessionColor }]}>{isReviewMode ? 'REVISÃO PRIORITÁRIA' : 'FOCO ATUAL'}</Text><Text style={styles.subject}>{sessionSubject}</Text><Text style={styles.topic}>{sessionTopic}</Text><View style={[styles.timer, { borderColor: sessionColor }, isPaused && styles.timerPaused]}><Text style={styles.time}>{plannedTime}</Text><Text accessibilityLiveRegion="polite" style={styles.timerLabel}>{isPaused ? 'sessão pausada · cronômetro mockado' : 'sessão pronta · cronômetro mockado'}</Text></View><View style={styles.plan}><Ionicons name="time-outline" size={20} color={sessionColor} /><Text style={styles.planText}>{sessionMinutes} minutos planejados</Text></View></View><View style={styles.actions}><SessionButton label={isPaused ? 'Retomar' : 'Pausar'} icon={isPaused ? 'play' : 'pause'} onPress={() => setIsPaused((current) => !current)} /><SessionButton label={review ? 'Concluir revisão' : isReviewMode ? 'Voltar' : 'Concluir'} icon="checkmark" primary tone={sessionColor} onPress={handleComplete} /><SessionButton label="Sair" icon="exit-outline" onPress={() => router.back()} /></View><Text style={styles.note}>{review ? 'Ao concluir, esta revisão deixará a lista de pendências e ficará salva neste dispositivo.' : isReviewMode ? 'Não há revisão pendente para concluir.' : 'Ao concluir, esta sessão e o progresso ficarão salvos neste dispositivo.'}</Text></Screen>;
 }
 
 function SessionButton({ label, icon, primary, tone = colors.atlas, onPress }: { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; primary?: boolean; tone?: string; onPress: () => void }) { return <AnimatedPressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.action, primary && styles.primary, primary && { backgroundColor: tone, borderColor: tone }]}><Ionicons name={icon} size={23} color={primary ? colors.background : colors.textPrimary} /><Text style={[styles.actionLabel, primary && styles.primaryLabel]}>{label}</Text></AnimatedPressable>; }

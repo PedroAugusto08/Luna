@@ -15,12 +15,14 @@ import { localStudyRepository } from '@/services/localStudyRepository';
 import type { ChatMessage } from '@/types/chat';
 import type { StudyDashboardData } from '@/types/dashboard';
 import type {
+  CompletedReview,
   CompletedStudySession,
   LocalStorageStatus,
   PersistedStudyState,
   PlanView,
   StudyPreferences,
 } from '@/types/persistence';
+import type { PendingReview } from '@/types/study';
 import type { StudyProfile } from '@/types/user';
 import { getFirstName } from '@/utils/userProfile';
 
@@ -28,12 +30,14 @@ interface StudyDataContextValue {
   dashboard: StudyDashboardData;
   chatMessages: ChatMessage[];
   completedSessions: CompletedStudySession[];
+  completedReviews: CompletedReview[];
   studyProfile: StudyProfile | null;
   preferences: StudyPreferences;
   storageStatus: LocalStorageStatus;
   updatedAt: string;
   appendChatMessage: (message: ChatMessage) => void;
   completeCurrentSession: (completedMinutes?: number) => void;
+  completeReview: (review: PendingReview) => void;
   setPlanView: (view: PlanView) => void;
   saveStudyProfile: (profile: StudyProfile) => void;
   resetDemoData: () => Promise<void>;
@@ -123,6 +127,27 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
     });
   }, []);
 
+  const completeReview = useCallback((review: PendingReview) => {
+    setState((current) => {
+      if (current.completedReviews.some((item) => item.reviewId === review.id)) {
+        return current;
+      }
+
+      const completedReview: CompletedReview = {
+        id: `review-${Date.now()}`,
+        reviewId: review.id,
+        subject: review.subject,
+        topic: review.topic,
+        completedAt: new Date().toISOString(),
+      };
+
+      return withTimestamp({
+        ...current,
+        completedReviews: [...current.completedReviews, completedReview],
+      });
+    });
+  }, []);
+
   const setPlanView = useCallback((planView: PlanView) => {
     setState((current) =>
       withTimestamp({
@@ -179,6 +204,9 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
       dailyGoal: state.dailyGoal,
       user,
       upcomingActivities: state.activities,
+      pendingReviews: mockDashboard.pendingReviews.filter(
+        (review) => !state.completedReviews.some((item) => item.reviewId === review.id),
+      ),
       weeklySummary: {
         ...mockDashboard.weeklySummary,
         studiedMinutes: mockDashboard.weeklySummary.studiedMinutes + addedMinutes,
@@ -187,19 +215,27 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
         dailyMinutes,
       },
     };
-  }, [state.activities, state.completedSessions, state.dailyGoal, state.studyProfile]);
+  }, [
+    state.activities,
+    state.completedReviews,
+    state.completedSessions,
+    state.dailyGoal,
+    state.studyProfile,
+  ]);
 
   const value = useMemo<StudyDataContextValue>(
     () => ({
       dashboard,
       chatMessages: state.chatMessages,
       completedSessions: state.completedSessions,
+      completedReviews: state.completedReviews,
       studyProfile: state.studyProfile,
       preferences: state.preferences,
       storageStatus,
       updatedAt: state.updatedAt,
       appendChatMessage,
       completeCurrentSession,
+      completeReview,
       setPlanView,
       saveStudyProfile,
       resetDemoData,
@@ -207,12 +243,14 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
     [
       appendChatMessage,
       completeCurrentSession,
+      completeReview,
       dashboard,
       resetDemoData,
       setPlanView,
       saveStudyProfile,
       state.chatMessages,
       state.completedSessions,
+      state.completedReviews,
       state.preferences,
       state.studyProfile,
       state.updatedAt,

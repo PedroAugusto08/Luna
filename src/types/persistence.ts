@@ -14,6 +14,14 @@ export interface CompletedStudySession {
   completedAt: string;
 }
 
+export interface CompletedReview {
+  id: string;
+  reviewId: string;
+  subject: string;
+  topic: string;
+  completedAt: string;
+}
+
 export interface StudyPreferences {
   planView: PlanView;
 }
@@ -24,6 +32,7 @@ export interface PersistedStudyState {
   activities: StudyActivity[];
   chatMessages: ChatMessage[];
   completedSessions: CompletedStudySession[];
+  completedReviews: CompletedReview[];
   preferences: StudyPreferences;
   updatedAt: string;
 }
