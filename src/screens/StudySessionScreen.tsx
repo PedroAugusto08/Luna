@@ -9,16 +9,19 @@ import { useStudyData } from '@/state/StudyDataProvider';
 import { colors, radius, spacing, typography } from '@/theme';
 
 export function StudySessionScreen() {
-  const { dashboard, completeCurrentSession, completeReview } = useStudyData();
-  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const { dashboard, completeStudySession, completeReview } = useStudyData();
+  const { activityId, mode } = useLocalSearchParams<{ activityId?: string; mode?: string }>();
   const focus = dashboard.currentFocus;
   const isReviewMode = mode === 'review';
+  const activity = activityId
+    ? dashboard.upcomingActivities.find((item) => item.id === activityId)
+    : undefined;
   const review = isReviewMode
     ? getMostUrgentReviews(dashboard.pendingReviews, 1)[0]
     : undefined;
-  const sessionSubject = review?.subject ?? (isReviewMode ? 'Nenhuma revisão pendente' : focus.subject);
-  const sessionTopic = review?.topic ?? (isReviewMode ? 'Marley está tranquilo por enquanto.' : focus.topic);
-  const sessionMinutes = review ? 20 : isReviewMode ? 0 : focus.estimatedMinutes;
+  const sessionSubject = review?.subject ?? activity?.subject ?? (isReviewMode ? 'Nenhuma revisão pendente' : focus.subject);
+  const sessionTopic = review?.topic ?? activity?.topic ?? (isReviewMode ? 'Marley está tranquilo por enquanto.' : focus.topic);
+  const sessionMinutes = review ? 20 : activity?.estimatedMinutes ?? (isReviewMode ? 0 : focus.estimatedMinutes);
   const sessionColor = isReviewMode ? colors.marley : colors.atlas;
   const [isPaused, setIsPaused] = useState(false);
   const plannedTime = `${String(sessionMinutes).padStart(2, '0')}:00`;
@@ -26,7 +29,7 @@ export function StudySessionScreen() {
     if (review) {
       completeReview(review);
     } else if (!isReviewMode) {
-      completeCurrentSession();
+      completeStudySession(activity);
     }
 
     router.back();

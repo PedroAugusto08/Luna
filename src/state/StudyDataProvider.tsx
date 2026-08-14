@@ -22,7 +22,7 @@ import type {
   PlanView,
   StudyPreferences,
 } from '@/types/persistence';
-import type { PendingReview } from '@/types/study';
+import type { PendingReview, StudyActivity } from '@/types/study';
 import type { StudyProfile } from '@/types/user';
 import { getFirstName } from '@/utils/userProfile';
 
@@ -36,7 +36,7 @@ interface StudyDataContextValue {
   storageStatus: LocalStorageStatus;
   updatedAt: string;
   appendChatMessage: (message: ChatMessage) => void;
-  completeCurrentSession: (completedMinutes?: number) => void;
+  completeStudySession: (activity?: StudyActivity, completedMinutes?: number) => void;
   completeReview: (review: PendingReview) => void;
   setPlanView: (view: PlanView) => void;
   saveStudyProfile: (profile: StudyProfile) => void;
@@ -94,23 +94,34 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
     );
   }, []);
 
-  const completeCurrentSession = useCallback((completedMinutes?: number) => {
+  const completeStudySession = useCallback((activity?: StudyActivity, completedMinutes?: number) => {
     const focus = mockDashboard.currentFocus;
-    const minutes = Math.max(0, completedMinutes ?? focus.estimatedMinutes);
+    const sessionSource = activity ?? focus;
+    const minutes = Math.max(0, completedMinutes ?? sessionSource.estimatedMinutes);
     const completedAt = new Date().toISOString();
 
     setState((current) => {
-      const activityIndex = current.activities.findIndex(
-        (activity) => activity.subject === focus.subject && activity.status !== 'completed',
+      const storedActivity = activity
+        ? current.activities.find((item) => item.id === activity.id)
+        : undefined;
+
+      if (activity && (!storedActivity || storedActivity.status === 'completed')) {
+        return current;
+      }
+
+      const activityIndex = current.activities.findIndex((item) =>
+        activity
+          ? item.id === activity.id
+          : item.subject === focus.subject && item.status !== 'completed',
       );
-      const activities = current.activities.map((activity, index) =>
-        index === activityIndex ? { ...activity, status: 'completed' as const } : activity,
+      const activities = current.activities.map((item, index) =>
+        index === activityIndex ? { ...item, status: 'completed' as const } : item,
       );
       const session: CompletedStudySession = {
         id: `session-${Date.now()}`,
-        focusId: focus.id,
-        subject: focus.subject,
-        topic: focus.topic,
+        focusId: sessionSource.id,
+        subject: sessionSource.subject,
+        topic: sessionSource.topic,
         completedMinutes: minutes,
         completedAt,
       };
@@ -234,7 +245,7 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
       storageStatus,
       updatedAt: state.updatedAt,
       appendChatMessage,
-      completeCurrentSession,
+      completeStudySession,
       completeReview,
       setPlanView,
       saveStudyProfile,
@@ -242,7 +253,7 @@ export function StudyDataProvider({ children }: PropsWithChildren) {
     }),
     [
       appendChatMessage,
-      completeCurrentSession,
+      completeStudySession,
       completeReview,
       dashboard,
       resetDemoData,

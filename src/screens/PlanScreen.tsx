@@ -67,19 +67,42 @@ export function PlanScreen() {
         <Card>
           <SectionHeader eyebrow="Hoje" title={todayTitle} />
           <View style={styles.timeline}>
-            {todayActivities.map((activity) => (
-              <View key={activity.id} style={styles.timelineItem}>
-                <Text style={styles.time}>{activity.scheduledTime}</Text>
-                <View style={styles.dot} />
-                <View style={styles.timelineCopy}>
-                  <Text style={styles.subject}>{activity.subject}</Text>
-                  <Text style={styles.muted}>
-                    {activity.topic} · {activity.estimatedMinutes} min ·{' '}
-                    {activity.status === 'completed' ? 'Concluída' : 'Pendente'}
-                  </Text>
-                </View>
-              </View>
-            ))}
+            {todayActivities.map((activity) => {
+              const isCompleted = activity.status === 'completed';
+
+              return (
+                <AnimatedPressable
+                  key={activity.id}
+                  onPress={() => {
+                    if (!isCompleted) {
+                      router.push({
+                        pathname: '/study-session',
+                        params: { activityId: activity.id },
+                      });
+                    }
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${isCompleted ? 'Atividade concluída' : 'Iniciar atividade'}: ${activity.subject}, ${activity.topic}`}
+                  accessibilityState={{ disabled: isCompleted }}
+                  style={styles.timelineItem}
+                >
+                  <Text style={styles.time}>{activity.scheduledTime}</Text>
+                  <View style={[styles.dot, isCompleted && styles.dotCompleted]} />
+                  <View style={styles.timelineCopy}>
+                    <Text style={styles.subject}>{activity.subject}</Text>
+                    <Text style={styles.muted}>
+                      {activity.topic} · {activity.estimatedMinutes} min ·{' '}
+                      {isCompleted ? 'Concluída' : 'Pendente'}
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name={isCompleted ? 'checkmark-circle' : 'play-circle-outline'}
+                    size={22}
+                    color={isCompleted ? colors.positive : colors.atlas}
+                  />
+                </AnimatedPressable>
+              );
+            })}
             {todayActivities.length === 0 ? (
               <Text style={styles.muted}>Nenhuma atividade planejada para hoje.</Text>
             ) : null}
@@ -189,7 +212,7 @@ export function PlanScreen() {
   );
 }
 
-const styles = StyleSheet.create({ eyebrow: { ...typography.label, color: colors.luna }, title: { ...typography.screenTitle, color: colors.textPrimary }, intro: { ...typography.body, color: colors.textSecondary }, filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginVertical: spacing.xs }, filter: { minHeight: 42, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, filterActive: { backgroundColor: colors.lunaTint, borderColor: colors.luna }, filterText: { ...typography.caption, color: colors.textSecondary }, filterTextActive: { color: colors.lunaLight, fontWeight: '700' }, filterFeedback: { ...typography.caption, color: colors.textMuted }, timeline: { marginTop: spacing.md }, timelineItem: { minHeight: 68, flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }, time: { ...typography.caption, color: colors.textSecondary, width: 45 }, dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.atlas, marginTop: 5 }, timelineCopy: { flex: 1, paddingBottom: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, subject: { ...typography.bodyStrong, color: colors.textPrimary }, muted: { ...typography.caption, color: colors.textSecondary }, week: { height: 145, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs, marginTop: spacing.lg }, day: { flex: 1, height: '100%', alignItems: 'center', gap: spacing.xxs }, dayBar: { flex: 1, width: 15, justifyContent: 'flex-end', borderRadius: radius.pill, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }, dayFill: { width: '100%', backgroundColor: colors.atlas, borderRadius: radius.pill }, dayLabel: { ...typography.caption, color: colors.textSecondary }, dayMinutes: { fontSize: 10, color: colors.textMuted }, subjects: { marginTop: spacing.md, gap: spacing.lg }, subjectRow: { gap: spacing.xs }, subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }, editalMeta: { marginTop: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceElevated }, editalText: { ...typography.bodyStrong, color: colors.textPrimary, flex: 1 }, emptyState: { gap: spacing.md } });
+const styles = StyleSheet.create({ eyebrow: { ...typography.label, color: colors.luna }, title: { ...typography.screenTitle, color: colors.textPrimary }, intro: { ...typography.body, color: colors.textSecondary }, filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginVertical: spacing.xs }, filter: { minHeight: 42, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, filterActive: { backgroundColor: colors.lunaTint, borderColor: colors.luna }, filterText: { ...typography.caption, color: colors.textSecondary }, filterTextActive: { color: colors.lunaLight, fontWeight: '700' }, filterFeedback: { ...typography.caption, color: colors.textMuted }, timeline: { marginTop: spacing.md }, timelineItem: { minHeight: 68, flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }, time: { ...typography.caption, color: colors.textSecondary, width: 45 }, dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.atlas, marginTop: 5 }, dotCompleted: { backgroundColor: colors.positive }, timelineCopy: { flex: 1, paddingBottom: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, subject: { ...typography.bodyStrong, color: colors.textPrimary }, muted: { ...typography.caption, color: colors.textSecondary }, week: { height: 145, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs, marginTop: spacing.lg }, day: { flex: 1, height: '100%', alignItems: 'center', gap: spacing.xxs }, dayBar: { flex: 1, width: 15, justifyContent: 'flex-end', borderRadius: radius.pill, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }, dayFill: { width: '100%', backgroundColor: colors.atlas, borderRadius: radius.pill }, dayLabel: { ...typography.caption, color: colors.textSecondary }, dayMinutes: { fontSize: 10, color: colors.textMuted }, subjects: { marginTop: spacing.md, gap: spacing.lg }, subjectRow: { gap: spacing.xs }, subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }, editalMeta: { marginTop: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceElevated }, editalText: { ...typography.bodyStrong, color: colors.textPrimary, flex: 1 }, emptyState: { gap: spacing.md } });
 
 const availabilityStyles = StyleSheet.create({
   list: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
