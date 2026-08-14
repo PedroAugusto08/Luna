@@ -180,7 +180,7 @@ export function PlanScreen() {
         onPress={() =>
           router.push(
             studyProfile
-              ? { pathname: '/onboarding', params: { mode: 'edit', returnTo: 'plan' } }
+              ? { pathname: '/onboarding', params: { mode: 'edit', returnTo: 'plan', initialStep: 'availability' } }
               : '/onboarding',
           )
         }

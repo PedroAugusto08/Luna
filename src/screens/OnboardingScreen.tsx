@@ -30,10 +30,17 @@ const defaultWeekdays: Weekday[] = [
 
 export function OnboardingScreen() {
   const { studyProfile, saveStudyProfile } = useStudyData();
-  const { mode, returnTo } = useLocalSearchParams<{ mode?: string; returnTo?: string }>();
+  const { initialStep, mode, returnTo } = useLocalSearchParams<{
+    initialStep?: string;
+    mode?: string;
+    returnTo?: string;
+  }>();
   const isEditing = mode === 'edit';
   const editingDestination = returnTo === 'plan' ? '/plan' : '/profile';
-  const [step, setStep] = useState<OnboardingStep>('welcome');
+  const [step, setStep] = useState<OnboardingStep>(() => {
+    if (!isEditing) return 'welcome';
+    return initialStep === 'availability' ? 'availability' : 'profile';
+  });
   const [fullName, setFullName] = useState(studyProfile?.fullName ?? '');
   const [goalType, setGoalType] = useState<StudyGoalType | null>(
     studyProfile?.goalType ?? null,
@@ -65,6 +72,11 @@ export function OnboardingScreen() {
     }
 
     if (step === 'profile') {
+      if (isEditing) {
+        router.back();
+        return;
+      }
+
       setStep('welcome');
       return;
     }

@@ -17,6 +17,12 @@ const sections = [
   { title: 'Suporte', items: [['Reportar problema', 'bug-outline'], ['Falar com suporte', 'chatbubble-outline'], ['Avaliar a Luna', 'star-outline']] },
 ] as const;
 
+const editableStudySteps: Partial<Record<string, 'profile' | 'availability'>> = {
+  'Perfil de estudos': 'profile',
+  'Objetivos e provas': 'profile',
+  Disponibilidade: 'availability',
+};
+
 export function ProfileScreen() {
   const { dashboard } = useStudyData();
   const { user } = dashboard;
@@ -69,12 +75,13 @@ export function ProfileScreen() {
               <AnimatedPressable
                 key={label}
                 onPress={() => {
-                  if (label === 'Perfil de estudos') {
-                    router.push({
-                      pathname: '/onboarding',
-                      params: { mode: 'edit' },
-                    });
-                  }
+                  const initialStep = editableStudySteps[label];
+                  if (!initialStep) return;
+
+                  router.push({
+                    pathname: '/onboarding',
+                    params: { mode: 'edit', initialStep },
+                  });
                 }}
                 accessibilityRole="button"
                 accessibilityLabel={label}
