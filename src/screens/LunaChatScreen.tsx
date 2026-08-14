@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,8 +12,9 @@ import { useStudyData } from '@/state/StudyDataProvider';
 const suggestions = ['Ajustar meu plano de hoje', 'Como está meu desempenho?', 'O que preciso revisar?'];
 
 export function LunaChatScreen() {
+  const { draft } = useLocalSearchParams<{ draft?: string }>();
   const { chatMessages: messages, appendChatMessage } = useStudyData();
-  const [text, setText] = useState('');
+  const [text, setText] = useState(() => draft?.trim() ?? '');
   const [responding, setResponding] = useState(false);
   const send = async (content = text) => {
     const trimmed = content.trim(); if (!trimmed || responding) return;

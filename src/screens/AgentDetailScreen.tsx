@@ -23,11 +23,20 @@ import { getProgress } from '@/utils/progress';
 
 type SpecialistId = Exclude<AgentId, 'luna'>;
 
+const agentConversationDrafts: Record<SpecialistId, string> = {
+  atlas: 'Quero revisar meu planejamento com o Atlas.',
+  peter: 'Quero entender minha análise de desempenho com o Peter.',
+  marley: 'Quero iniciar minha revisão mais urgente com o Marley.',
+};
+
 export function AgentDetailScreen({ agentId }: { agentId: SpecialistId }) {
   const profile = mockAgents.find((item) => item.id === agentId);
   if (!profile) return null;
   const color = agentColors[agentId];
-  return <Screen><View style={styles.top}><AnimatedPressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.back}><Ionicons name="arrow-back" size={22} color={colors.textPrimary} /></AnimatedPressable><Text style={styles.topLabel}>Agente especialista</Text></View><View style={[styles.hero, { borderColor: color }]}><AgentAvatar agent={agentId} size={72} /><View style={styles.heroCopy}><Text style={styles.title}>{profile.name}</Text><Text style={[styles.role, { color }]}>{profile.role}</Text><Text style={styles.description}>{profile.description}</Text></View></View>{agentId === 'atlas' ? <AtlasContent /> : agentId === 'peter' ? <PeterContent /> : <MarleyContent />}<PrimaryButton label={agentId === 'marley' ? 'Iniciar revisão' : `Conversar com ${profile.name}`} icon={agentId === 'marley' ? 'play' : 'chatbubble-outline'} tone={color} onPress={() => undefined} /></Screen>;
+  return <Screen><View style={styles.top}><AnimatedPressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Voltar" style={styles.back}><Ionicons name="arrow-back" size={22} color={colors.textPrimary} /></AnimatedPressable><Text style={styles.topLabel}>Agente especialista</Text></View><View style={[styles.hero, { borderColor: color }]}><AgentAvatar agent={agentId} size={72} /><View style={styles.heroCopy}><Text style={styles.title}>{profile.name}</Text><Text style={[styles.role, { color }]}>{profile.role}</Text><Text style={styles.description}>{profile.description}</Text></View></View>{agentId === 'atlas' ? <AtlasContent /> : agentId === 'peter' ? <PeterContent /> : <MarleyContent />}<PrimaryButton label={agentId === 'marley' ? 'Iniciar revisão' : `Conversar com ${profile.name}`} icon={agentId === 'marley' ? 'play' : 'chatbubble-outline'} tone={color} onPress={() => router.push({
+    pathname: '/luna',
+    params: { draft: agentConversationDrafts[agentId] },
+  })} /></Screen>;
 }
 
 function AtlasContent() {
