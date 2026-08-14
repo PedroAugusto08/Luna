@@ -28,6 +28,11 @@ export function PlanScreen() {
   const weeklyLoad = getWeeklyAvailabilityLoad(availability);
   const weeklyMinutes = weeklyLoad.reduce((total, day) => total + day.minutes, 0);
   const busiestDayMinutes = Math.max(...weeklyLoad.map((day) => day.minutes), 1);
+  const todayActivities = dashboard.upcomingActivities.slice(0, 3);
+  const todayTitle =
+    todayActivities.length === 1
+      ? '1 bloco planejado'
+      : `${todayActivities.length} blocos planejados`;
   const availabilityTitle =
     availability.length === 1 ? '1 dia configurado' : `${availability.length} dias configurados`;
 
@@ -55,102 +60,120 @@ export function PlanScreen() {
           </AnimatedPressable>
         ))}
       </View>
-      <Text style={styles.filterFeedback}>Visualização selecionada: {filter}</Text>
-      <Card>
-        <SectionHeader eyebrow="Hoje" title="3 blocos planejados" />
-        <View style={styles.timeline}>
-          {dashboard.upcomingActivities.slice(0, 3).map((activity) => (
-            <View key={activity.id} style={styles.timelineItem}>
-              <Text style={styles.time}>{activity.scheduledTime}</Text>
-              <View style={styles.dot} />
-              <View style={styles.timelineCopy}>
-                <Text style={styles.subject}>{activity.subject}</Text>
-                <Text style={styles.muted}>
-                  {activity.topic} · {activity.estimatedMinutes} min ·{' '}
-                  {activity.status === 'completed' ? 'Concluída' : 'Pendente'}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-      </Card>
-      <Card>
-        <SectionHeader
-          eyebrow="Semana"
-          title={`${formatAvailabilityMinutes(weeklyMinutes)} de disponibilidade`}
-        />
-        <View style={styles.week}>
-          {weeklyLoad.map((day) => (
-            <View key={day.weekday} style={styles.day}>
-              <View style={styles.dayBar}>
-                <View
-                  style={[
-                    styles.dayFill,
-                    {
-                      height:
-                        day.minutes > 0
-                          ? `${Math.max((day.minutes / busiestDayMinutes) * 100, 6)}%`
-                          : '0%',
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.dayLabel}>{day.day}</Text>
-              <Text style={styles.dayMinutes}>
-                {formatAvailabilityMinutes(day.minutes)}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </Card>
-      <Card>
-        <SectionHeader eyebrow="Disponibilidade" title={availabilityTitle} />
-        {availability.length > 0 ? (
-          <View style={availabilityStyles.list}>
-            {availability.map((item) => (
-              <View key={item.weekday} style={availabilityStyles.item}>
-                <View style={availabilityStyles.day}>
-                  <Ionicons name="calendar-outline" size={17} color={colors.atlas} />
-                  <Text style={availabilityStyles.dayText}>
-                    {getShortWeekdayLabel(item.weekday)}
+      <Text accessibilityLiveRegion="polite" style={styles.filterFeedback}>
+        Visualização selecionada: {filter}
+      </Text>
+      {filter === 'Hoje' ? (
+        <Card>
+          <SectionHeader eyebrow="Hoje" title={todayTitle} />
+          <View style={styles.timeline}>
+            {todayActivities.map((activity) => (
+              <View key={activity.id} style={styles.timelineItem}>
+                <Text style={styles.time}>{activity.scheduledTime}</Text>
+                <View style={styles.dot} />
+                <View style={styles.timelineCopy}>
+                  <Text style={styles.subject}>{activity.subject}</Text>
+                  <Text style={styles.muted}>
+                    {activity.topic} · {activity.estimatedMinutes} min ·{' '}
+                    {activity.status === 'completed' ? 'Concluída' : 'Pendente'}
                   </Text>
                 </View>
-                <Text style={availabilityStyles.time}>
-                  {item.startTime}–{item.endTime}
-                </Text>
+              </View>
+            ))}
+            {todayActivities.length === 0 ? (
+              <Text style={styles.muted}>Nenhuma atividade planejada para hoje.</Text>
+            ) : null}
+          </View>
+        </Card>
+      ) : null}
+      {filter === 'Semana' ? (
+        <>
+          <Card>
+            <SectionHeader
+              eyebrow="Semana"
+              title={`${formatAvailabilityMinutes(weeklyMinutes)} de disponibilidade`}
+            />
+            <View style={styles.week}>
+              {weeklyLoad.map((day) => (
+                <View key={day.weekday} style={styles.day}>
+                  <View style={styles.dayBar}>
+                    <View
+                      style={[
+                        styles.dayFill,
+                        {
+                          height:
+                            day.minutes > 0
+                              ? `${Math.max((day.minutes / busiestDayMinutes) * 100, 6)}%`
+                              : '0%',
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.dayLabel}>{day.day}</Text>
+                  <Text style={styles.dayMinutes}>{formatAvailabilityMinutes(day.minutes)}</Text>
+                </View>
+              ))}
+            </View>
+          </Card>
+          <Card>
+            <SectionHeader eyebrow="Disponibilidade" title={availabilityTitle} />
+            {availability.length > 0 ? (
+              <View style={availabilityStyles.list}>
+                {availability.map((item) => (
+                  <View key={item.weekday} style={availabilityStyles.item}>
+                    <View style={availabilityStyles.day}>
+                      <Ionicons name="calendar-outline" size={17} color={colors.atlas} />
+                      <Text style={availabilityStyles.dayText}>{getShortWeekdayLabel(item.weekday)}</Text>
+                    </View>
+                    <Text style={availabilityStyles.time}>{item.startTime}–{item.endTime}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.muted}>
+                Informe seus dias e horários para preparar a base do plano adaptativo.
+              </Text>
+            )}
+          </Card>
+        </>
+      ) : null}
+      {filter === 'Calendário' ? (
+        <Card style={styles.emptyState}>
+          <Ionicons name="calendar-outline" size={28} color={colors.lunaLight} />
+          <SectionHeader eyebrow="Calendário" title="Visão mensal em breve" />
+          <Text style={styles.muted}>
+            A organização por datas será adicionada quando o cronograma adaptativo for gerado.
+          </Text>
+        </Card>
+      ) : null}
+      {filter === 'Matérias' ? (
+        <Card>
+          <SectionHeader eyebrow="Matérias" title="Progresso do ciclo" />
+          <View style={styles.subjects}>
+            {planSubjects.map((subject) => (
+              <View key={subject.name} style={styles.subjectRow}>
+                <View style={styles.subjectHeader}>
+                  <Text style={styles.subject}>{subject.name}</Text>
+                  <Text style={styles.muted}>{subject.progress}%</Text>
+                </View>
+                <ProgressBar progress={subject.progress / 100} color={subject.color} />
               </View>
             ))}
           </View>
-        ) : (
+        </Card>
+      ) : null}
+      {filter === 'Edital' ? (
+        <Card>
+          <SectionHeader eyebrow="Edital" title="42% coberto" />
           <Text style={styles.muted}>
-            Informe seus dias e horários para preparar a base do plano adaptativo.
+            127 de 302 tópicos concluídos · 18 tópicos têm prioridade alta.
           </Text>
-        )}
-      </Card>
-      <Card>
-        <SectionHeader eyebrow="Matérias" title="Progresso do ciclo" />
-        <View style={styles.subjects}>
-          {planSubjects.map((subject) => (
-            <View key={subject.name} style={styles.subjectRow}>
-              <View style={styles.subjectHeader}>
-                <Text style={styles.subject}>{subject.name}</Text>
-                <Text style={styles.muted}>{subject.progress}%</Text>
-              </View>
-              <ProgressBar progress={subject.progress / 100} color={subject.color} />
-            </View>
-          ))}
-        </View>
-      </Card>
-      <Card>
-        <SectionHeader eyebrow="Edital" title="42% coberto" />
-        <Text style={styles.muted}>
-          127 de 302 tópicos concluídos · 18 tópicos têm prioridade alta.
-        </Text>
-        <View style={styles.editalMeta}>
-          <Ionicons name="document-text-outline" size={20} color={colors.lunaLight} />
-          <Text style={styles.editalText}>Objetivo ativo: {dashboard.user.primaryGoal}</Text>
-        </View>
-      </Card>
+          <View style={styles.editalMeta}>
+            <Ionicons name="document-text-outline" size={20} color={colors.lunaLight} />
+            <Text style={styles.editalText}>Objetivo ativo: {dashboard.user.primaryGoal}</Text>
+          </View>
+        </Card>
+      ) : null}
       <PrimaryButton
         label="Ajustar disponibilidade"
         icon="options-outline"
@@ -166,7 +189,7 @@ export function PlanScreen() {
   );
 }
 
-const styles = StyleSheet.create({ eyebrow: { ...typography.label, color: colors.luna }, title: { ...typography.screenTitle, color: colors.textPrimary }, intro: { ...typography.body, color: colors.textSecondary }, filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginVertical: spacing.xs }, filter: { minHeight: 42, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, filterActive: { backgroundColor: colors.lunaTint, borderColor: colors.luna }, filterText: { ...typography.caption, color: colors.textSecondary }, filterTextActive: { color: colors.lunaLight, fontWeight: '700' }, filterFeedback: { ...typography.caption, color: colors.textMuted }, timeline: { marginTop: spacing.md }, timelineItem: { minHeight: 68, flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }, time: { ...typography.caption, color: colors.textSecondary, width: 45 }, dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.atlas, marginTop: 5 }, timelineCopy: { flex: 1, paddingBottom: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, subject: { ...typography.bodyStrong, color: colors.textPrimary }, muted: { ...typography.caption, color: colors.textSecondary }, week: { height: 145, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs, marginTop: spacing.lg }, day: { flex: 1, height: '100%', alignItems: 'center', gap: spacing.xxs }, dayBar: { flex: 1, width: 15, justifyContent: 'flex-end', borderRadius: radius.pill, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }, dayFill: { width: '100%', backgroundColor: colors.atlas, borderRadius: radius.pill }, dayLabel: { ...typography.caption, color: colors.textSecondary }, dayMinutes: { fontSize: 10, color: colors.textMuted }, subjects: { marginTop: spacing.md, gap: spacing.lg }, subjectRow: { gap: spacing.xs }, subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }, editalMeta: { marginTop: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceElevated }, editalText: { ...typography.bodyStrong, color: colors.textPrimary, flex: 1 } });
+const styles = StyleSheet.create({ eyebrow: { ...typography.label, color: colors.luna }, title: { ...typography.screenTitle, color: colors.textPrimary }, intro: { ...typography.body, color: colors.textSecondary }, filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginVertical: spacing.xs }, filter: { minHeight: 42, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, filterActive: { backgroundColor: colors.lunaTint, borderColor: colors.luna }, filterText: { ...typography.caption, color: colors.textSecondary }, filterTextActive: { color: colors.lunaLight, fontWeight: '700' }, filterFeedback: { ...typography.caption, color: colors.textMuted }, timeline: { marginTop: spacing.md }, timelineItem: { minHeight: 68, flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }, time: { ...typography.caption, color: colors.textSecondary, width: 45 }, dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.atlas, marginTop: 5 }, timelineCopy: { flex: 1, paddingBottom: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, subject: { ...typography.bodyStrong, color: colors.textPrimary }, muted: { ...typography.caption, color: colors.textSecondary }, week: { height: 145, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs, marginTop: spacing.lg }, day: { flex: 1, height: '100%', alignItems: 'center', gap: spacing.xxs }, dayBar: { flex: 1, width: 15, justifyContent: 'flex-end', borderRadius: radius.pill, backgroundColor: colors.surfaceElevated, overflow: 'hidden' }, dayFill: { width: '100%', backgroundColor: colors.atlas, borderRadius: radius.pill }, dayLabel: { ...typography.caption, color: colors.textSecondary }, dayMinutes: { fontSize: 10, color: colors.textMuted }, subjects: { marginTop: spacing.md, gap: spacing.lg }, subjectRow: { gap: spacing.xs }, subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md }, editalMeta: { marginTop: spacing.lg, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceElevated }, editalText: { ...typography.bodyStrong, color: colors.textPrimary, flex: 1 }, emptyState: { gap: spacing.md } });
 
 const availabilityStyles = StyleSheet.create({
   list: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
