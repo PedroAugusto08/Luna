@@ -8,11 +8,16 @@ import { ProgressBar } from '@/components/common/ProgressBar';
 import { Screen } from '@/components/common/Screen';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { LunaAskBar } from '@/components/navigation/LunaAskBar';
-import { planSubjects, weeklyLoad } from '@/data/mockPlan';
+import { planSubjects } from '@/data/mockPlan';
 import { useStudyData } from '@/state/StudyDataProvider';
 import { colors, radius, spacing, typography } from '@/theme';
 import type { PlanView } from '@/types/persistence';
-import { getShortWeekdayLabel, sortStudyAvailability } from '@/utils/availability';
+import {
+  formatAvailabilityMinutes,
+  getShortWeekdayLabel,
+  getWeeklyAvailabilityLoad,
+  sortStudyAvailability,
+} from '@/utils/availability';
 
 const filters = ['Hoje', 'Semana', 'Calendário', 'Matérias', 'Edital'] as const satisfies readonly PlanView[];
 
@@ -20,6 +25,9 @@ export function PlanScreen() {
   const { dashboard, preferences, setPlanView, studyProfile } = useStudyData();
   const filter = preferences.planView;
   const availability = sortStudyAvailability(studyProfile?.availability ?? []);
+  const weeklyLoad = getWeeklyAvailabilityLoad(availability);
+  const weeklyMinutes = weeklyLoad.reduce((total, day) => total + day.minutes, 0);
+  const busiestDayMinutes = Math.max(...weeklyLoad.map((day) => day.minutes), 1);
   const availabilityTitle =
     availability.length === 1 ? '1 dia configurado' : `${availability.length} dias configurados`;
 
@@ -67,20 +75,30 @@ export function PlanScreen() {
         </View>
       </Card>
       <Card>
-        <SectionHeader eyebrow="Semana" title="Carga planejada" />
+        <SectionHeader
+          eyebrow="Semana"
+          title={`${formatAvailabilityMinutes(weeklyMinutes)} de disponibilidade`}
+        />
         <View style={styles.week}>
           {weeklyLoad.map((day) => (
-            <View key={day.day} style={styles.day}>
+            <View key={day.weekday} style={styles.day}>
               <View style={styles.dayBar}>
                 <View
                   style={[
                     styles.dayFill,
-                    { height: `${Math.max((day.minutes / 210) * 100, 6)}%` },
+                    {
+                      height:
+                        day.minutes > 0
+                          ? `${Math.max((day.minutes / busiestDayMinutes) * 100, 6)}%`
+                          : '0%',
+                    },
                   ]}
                 />
               </View>
               <Text style={styles.dayLabel}>{day.day}</Text>
-              <Text style={styles.dayMinutes}>{day.minutes}</Text>
+              <Text style={styles.dayMinutes}>
+                {formatAvailabilityMinutes(day.minutes)}
+              </Text>
             </View>
           ))}
         </View>
