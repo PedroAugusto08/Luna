@@ -1,24 +1,35 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { AnimatedPressable } from '@/components/common/AnimatedPressable';
 import { Screen } from '@/components/common/Screen';
+import { getMostUrgentReviews } from '@/services/reviewPriorityService';
 import { useStudyData } from '@/state/StudyDataProvider';
 import { colors, radius, spacing, typography } from '@/theme';
 
 export function StudySessionScreen() {
   const { dashboard, completeCurrentSession } = useStudyData();
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
   const focus = dashboard.currentFocus;
+  const review = mode === 'review'
+    ? getMostUrgentReviews(dashboard.pendingReviews, 1)[0]
+    : undefined;
+  const sessionSubject = review?.subject ?? focus.subject;
+  const sessionTopic = review?.topic ?? focus.topic;
+  const sessionMinutes = review ? 20 : focus.estimatedMinutes;
+  const sessionColor = review ? colors.marley : colors.atlas;
   const [isPaused, setIsPaused] = useState(false);
-  const plannedTime = `${String(focus.estimatedMinutes).padStart(2, '0')}:00`;
+  const plannedTime = `${String(sessionMinutes).padStart(2, '0')}:00`;
   const handleComplete = () => {
-    completeCurrentSession();
+    if (!review) {
+      completeCurrentSession();
+    }
     router.back();
   };
-  return <Screen><View style={styles.top}><AnimatedPressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Sair da sessão" style={styles.back}><Ionicons name="close" size={24} color={colors.textPrimary} /></AnimatedPressable><Text style={styles.topLabel}>Sessão de estudos</Text></View><View style={styles.main}><Text style={styles.eyebrow}>FOCO ATUAL</Text><Text style={styles.subject}>{focus.subject}</Text><Text style={styles.topic}>{focus.topic}</Text><View style={[styles.timer, isPaused && styles.timerPaused]}><Text style={styles.time}>{plannedTime}</Text><Text accessibilityLiveRegion="polite" style={styles.timerLabel}>{isPaused ? 'sessão pausada · cronômetro mockado' : 'sessão pronta · cronômetro mockado'}</Text></View><View style={styles.plan}><Ionicons name="time-outline" size={20} color={colors.atlas} /><Text style={styles.planText}>{focus.estimatedMinutes} minutos planejados</Text></View></View><View style={styles.actions}><SessionButton label={isPaused ? 'Retomar' : 'Pausar'} icon={isPaused ? 'play' : 'pause'} onPress={() => setIsPaused((current) => !current)} /><SessionButton label="Concluir" icon="checkmark" primary onPress={handleComplete} /><SessionButton label="Sair" icon="exit-outline" onPress={() => router.back()} /></View><Text style={styles.note}>Ao concluir, esta sessão e o progresso ficarão salvos neste dispositivo.</Text></Screen>;
+  return <Screen><View style={styles.top}><AnimatedPressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Sair da sessão" style={styles.back}><Ionicons name="close" size={24} color={colors.textPrimary} /></AnimatedPressable><Text style={styles.topLabel}>{review ? 'Sessão de revisão' : 'Sessão de estudos'}</Text></View><View style={styles.main}><Text style={[styles.eyebrow, { color: sessionColor }]}>{review ? 'REVISÃO PRIORITÁRIA' : 'FOCO ATUAL'}</Text><Text style={styles.subject}>{sessionSubject}</Text><Text style={styles.topic}>{sessionTopic}</Text><View style={[styles.timer, { borderColor: sessionColor }, isPaused && styles.timerPaused]}><Text style={styles.time}>{plannedTime}</Text><Text accessibilityLiveRegion="polite" style={styles.timerLabel}>{isPaused ? 'sessão pausada · cronômetro mockado' : 'sessão pronta · cronômetro mockado'}</Text></View><View style={styles.plan}><Ionicons name="time-outline" size={20} color={sessionColor} /><Text style={styles.planText}>{sessionMinutes} minutos planejados</Text></View></View><View style={styles.actions}><SessionButton label={isPaused ? 'Retomar' : 'Pausar'} icon={isPaused ? 'play' : 'pause'} onPress={() => setIsPaused((current) => !current)} /><SessionButton label={review ? 'Encerrar' : 'Concluir'} icon="checkmark" primary tone={sessionColor} onPress={handleComplete} /><SessionButton label="Sair" icon="exit-outline" onPress={() => router.back()} /></View><Text style={styles.note}>{review ? 'Esta demonstração ainda não altera o histórico de revisões.' : 'Ao concluir, esta sessão e o progresso ficarão salvos neste dispositivo.'}</Text></Screen>;
 }
 
-function SessionButton({ label, icon, primary, onPress }: { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; primary?: boolean; onPress: () => void }) { return <AnimatedPressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.action, primary && styles.primary]}><Ionicons name={icon} size={23} color={primary ? colors.background : colors.textPrimary} /><Text style={[styles.actionLabel, primary && styles.primaryLabel]}>{label}</Text></AnimatedPressable>; }
+function SessionButton({ label, icon, primary, tone = colors.atlas, onPress }: { label: string; icon: React.ComponentProps<typeof Ionicons>['name']; primary?: boolean; tone?: string; onPress: () => void }) { return <AnimatedPressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.action, primary && styles.primary, primary && { backgroundColor: tone, borderColor: tone }]}><Ionicons name={icon} size={23} color={primary ? colors.background : colors.textPrimary} /><Text style={[styles.actionLabel, primary && styles.primaryLabel]}>{label}</Text></AnimatedPressable>; }
 
 const styles = StyleSheet.create({ top: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm }, back: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }, topLabel: { ...typography.bodyStrong, color: colors.textSecondary }, main: { minHeight: 470, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.xxl }, eyebrow: { ...typography.label, color: colors.atlas }, subject: { ...typography.screenTitle, color: colors.textPrimary, marginTop: spacing.sm, textAlign: 'center' }, topic: { ...typography.body, color: colors.textSecondary, textAlign: 'center', maxWidth: 340 }, timer: { width: 240, height: 240, borderRadius: 120, alignItems: 'center', justifyContent: 'center', marginVertical: spacing.xxl, backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.atlas }, timerPaused: { borderColor: colors.warning }, time: { fontSize: 52, lineHeight: 60, fontWeight: '300', color: colors.textPrimary, fontVariant: ['tabular-nums'] }, timerLabel: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs }, plan: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs }, planText: { ...typography.bodyStrong, color: colors.textSecondary }, actions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm }, action: { minWidth: 98, minHeight: 58, paddingHorizontal: spacing.md, borderRadius: radius.pill, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, primary: { backgroundColor: colors.atlas, borderColor: colors.atlas }, actionLabel: { ...typography.bodyStrong, color: colors.textPrimary }, primaryLabel: { color: colors.background }, note: { ...typography.caption, color: colors.textMuted, textAlign: 'center' } });
