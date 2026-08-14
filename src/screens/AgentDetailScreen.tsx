@@ -10,10 +10,16 @@ import { Screen } from '@/components/common/Screen';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { agentColors, mockAgents } from '@/data/mockAgents';
 import { mockDashboard } from '@/data/mockDashboard';
-import { planHistory, planSubjects, weeklyLoad } from '@/data/mockPlan';
+import { planHistory, planSubjects } from '@/data/mockPlan';
 import { getMostUrgentReviews } from '@/services/reviewPriorityService';
+import { useStudyData } from '@/state/StudyDataProvider';
 import { colors, radius, spacing, typography } from '@/theme';
 import type { AgentId } from '@/types/agents';
+import {
+  formatAvailabilityMinutes,
+  getWeeklyAvailabilityLoad,
+} from '@/utils/availability';
+import { getProgress } from '@/utils/progress';
 
 type SpecialistId = Exclude<AgentId, 'luna'>;
 
@@ -25,7 +31,57 @@ export function AgentDetailScreen({ agentId }: { agentId: SpecialistId }) {
 }
 
 function AtlasContent() {
-  return <><Card><SectionHeader eyebrow="Planejamento atual" title="OAB · ciclo de 12 semanas" /><Text style={styles.description}>Semana 4 de 12 · 17h planejadas · 68% da carga concluída.</Text><ProgressBar progress={0.68} color={colors.atlas} /></Card><Card><SectionHeader eyebrow="Carga da semana" title="17 horas" /><View style={styles.weekRows}>{weeklyLoad.map((day) => <View key={day.day} style={styles.weekRow}><Text numberOfLines={1} style={styles.weekDay}>{day.day}</Text><View style={styles.weekProgress}><ProgressBar progress={day.minutes / 210} color={colors.atlas} /></View><Text numberOfLines={1} style={styles.weekValue}>{day.minutes}m</Text></View>)}</View></Card><Card><SectionHeader title="Matérias prioritárias" /><Rows items={planSubjects.slice().sort((a, b) => a.progress - b.progress).slice(0, 3).map((item) => `${item.name} · ${item.progress}% do ciclo`)} /></Card><Card style={styles.warningCard}><SectionHeader eyebrow="Atenção" title="2 conteúdos atrasados" /><Rows items={['Direito Administrativo · Atos administrativos', 'Matemática · Análise combinatória']} /></Card><Card><SectionHeader title="Próximos ajustes" /><Rows items={['Redistribuir 30 min na quinta-feira', 'Reavaliar peso de Português após o simulado']} /></Card><Card><SectionHeader title="Histórico de mudanças" /><Rows items={planHistory} /></Card></>;
+  const { dashboard, studyProfile } = useStudyData();
+  const weeklyLoad = getWeeklyAvailabilityLoad(studyProfile?.availability ?? []);
+  const weeklyMinutes = weeklyLoad.reduce((total, day) => total + day.minutes, 0);
+  const busiestDayMinutes = Math.max(...weeklyLoad.map((day) => day.minutes), 1);
+  const dailyProgress = getProgress(
+    dashboard.dailyGoal.completedMinutes,
+    dashboard.dailyGoal.targetMinutes,
+  );
+
+  return (
+    <>
+      <Card>
+        <SectionHeader
+          eyebrow="Planejamento atual"
+          title={dashboard.user.primaryGoal}
+        />
+        <Text style={styles.description}>
+          Hoje: {dashboard.dailyGoal.completedMinutes} de{' '}
+          {dashboard.dailyGoal.targetMinutes} min estudados ·{' '}
+          {studyProfile?.availability.length ?? 0} dias disponíveis na semana.
+        </Text>
+        <ProgressBar progress={dailyProgress.ratio} color={colors.atlas} />
+      </Card>
+      <Card>
+        <SectionHeader
+          eyebrow="Disponibilidade semanal"
+          title={`${formatAvailabilityMinutes(weeklyMinutes)} disponíveis`}
+        />
+        <View style={styles.weekRows}>
+          {weeklyLoad.map((day) => (
+            <View key={day.weekday} style={styles.weekRow}>
+              <Text numberOfLines={1} style={styles.weekDay}>{day.day}</Text>
+              <View style={styles.weekProgress}>
+                <ProgressBar
+                  progress={day.minutes / busiestDayMinutes}
+                  color={colors.atlas}
+                />
+              </View>
+              <Text numberOfLines={1} style={styles.weekValue}>
+                {formatAvailabilityMinutes(day.minutes)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </Card>
+      <Card><SectionHeader title="Matérias prioritárias" /><Rows items={planSubjects.slice().sort((a, b) => a.progress - b.progress).slice(0, 3).map((item) => `${item.name} · ${item.progress}% do ciclo`)} /></Card>
+      <Card style={styles.warningCard}><SectionHeader eyebrow="Atenção" title="2 conteúdos atrasados" /><Rows items={['Direito Administrativo · Atos administrativos', 'Matemática · Análise combinatória']} /></Card>
+      <Card><SectionHeader title="Próximos ajustes" /><Rows items={['Redistribuir 30 min na quinta-feira', 'Reavaliar peso de Português após o simulado']} /></Card>
+      <Card><SectionHeader title="Histórico de mudanças" /><Rows items={planHistory} /></Card>
+    </>
+  );
 }
 
 function PeterContent() {

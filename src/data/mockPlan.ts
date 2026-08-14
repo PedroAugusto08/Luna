@@ -1,10 +1,6 @@
 import { colors } from '@/theme';
 import type { SubjectProgress } from '@/types/study';
 
-export const weeklyLoad = [
-  { day: 'Seg', minutes: 120 }, { day: 'Ter', minutes: 180 }, { day: 'Qua', minutes: 150 },
-  { day: 'Qui', minutes: 180 }, { day: 'Sex', minutes: 120 }, { day: 'Sáb', minutes: 210 }, { day: 'Dom', minutes: 60 },
-];
 
 export const planSubjects: SubjectProgress[] = [
   { name: 'Direito Constitucional', progress: 68, accuracy: 74, color: colors.atlas },
